@@ -4,9 +4,12 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "scrap": "node index.js"
+    "scrap": "node scraping/index.js"
   },
   "keywords": [],
   "author": "",
