@@ -1,6 +1,7 @@
 import playwright from 'playwright'
+import { KEYWORDS } from './constants/keywords.js'
 
-const parseTweetInfo = async (page, tweet) => {
+const parseTweetInfo = async (tweet) => {
   const tweetText = await tweet.$eval('div[lang]', (el) => el.innerText)
 
   if (typeof tweetText !== 'string') return ''
@@ -15,18 +16,22 @@ const parseTweetInfo = async (page, tweet) => {
   // filter the anchors that has "status/" and doesn't has "analytics" in the url
   const tweetUrl = anchors.find((url) => url.includes('status/') && !url.includes('analytics'))
 
+  const mappedKeywords = KEYWORDS.reduce((acc, keyword) => {
+    if (tweetText.toLowerCase().includes(keyword)) acc[keyword.replace(' ', '_')] = true
+    return acc
+  }, {})
+
   return {
-    text: tweetText.toLowerCase(), // TODO: dont lowerCase links
     tweetUrl,
-    // isCorredorAmarillo, isCorredorAzul...
+    text: tweetText,
+    keywords: mappedKeywords,
   }
 }
 
 async function main () {
   const browser = await playwright.chromium.launch({
-    // headless: false, // setting this to true will not run the UI
+    // headless: false,
     // slowMo: 2000,
-    // devtools: true,
   })
 
   const page = await browser.newPage()
@@ -38,17 +43,13 @@ async function main () {
   await page.evaluate(() => window.scrollTo(0, 1000))
   const tweets = await page.$$('article[role="article"][data-testid="tweet"]')
 
-  const tweetList = await Promise.all(tweets.map((tweet) => parseTweetInfo(page, tweet)))
+  const tweetList = await Promise.all(
+    tweets.map((tweet) => parseTweetInfo(tweet)),
+  )
 
-  // await page.waitForTimeout(30000)
-
-  // search for a word in an array of strings
-  const searchWord = 'corredor amarillo'
-  const searchResult = tweetList.filter(Boolean).filter((tweet) => tweet.text.includes(searchWord))
+  await page.waitForTimeout(30000)
 
   console.log(tweetList)
-  // console.log('---')
-  // console.log(searchResult)
 
   await browser.close()
 }
